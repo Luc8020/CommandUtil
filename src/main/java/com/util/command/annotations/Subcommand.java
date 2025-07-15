@@ -6,9 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface Argument {
+@Target(ElementType.METHOD)
+public @interface Subcommand {
     String name();
-    String commands() default "";
-    String subcommands() default "";
+    String parent();
 }

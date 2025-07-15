@@ -14,20 +14,37 @@ public class CommandService {
         this.commandScanner = commandScanner;
     }
 
-    public CommandBinding getCommand(String name){
-        CommandBinding commandBinding = commandScanner.commands.get(name);
-        if(commandBinding == null){
-            throw new CommandNotFoundException("Command "+ name + " not found use help to see a list of all commands");
-        }
-        return commandBinding;
-    }
-
     public ArgumentModel buildArgument(String name, String value){
         ArgumentBinding argumentBinding = getArgument(name);
         ArgumentModel argumentModel = new ArgumentModel();
         argumentModel.setArgumentBinding(argumentBinding);
         argumentModel.setValue(value);
         return argumentModel;
+    }
+
+    public CommandBinding getCommand(String name){
+        CommandBinding commandBinding = commandScanner.commands.get(name);
+        if(commandBinding == null){
+            throw new CommandNotFoundException("Command "+ name + " not found");
+        }
+        return commandBinding;
+    }
+
+    public CommandBinding getCommandByPath(String path){
+        return commandScanner.commands.get(path);
+    }
+
+    public CommandBinding getSubcommand(String parentPath, String subcommandName){
+        CommandBinding parentCommand = getCommandByPath(parentPath);
+        if (parentCommand == null) {
+            throw new CommandNotFoundException("Parent command '" + parentPath + "' not found");
+        }
+
+        CommandBinding subcommand = parentCommand.getSubcommands().get(subcommandName);
+        if(subcommand == null){
+            throw new CommandNotFoundException("Subcommand '" + subcommandName + "' not found for command '" + parentPath + "'");
+        }
+        return subcommand;
     }
 
     private ArgumentBinding getArgument(String name){
