@@ -8,6 +8,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Argument {
-    String name() default "";
-    String commands();
+    String name();
+    String commands() default "";
 }

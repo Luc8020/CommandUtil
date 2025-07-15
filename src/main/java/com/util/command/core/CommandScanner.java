@@ -11,12 +11,11 @@ import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class CommandScanner {
     private Reflections reflections;
+    private final InstanceRegistry instanceRegistry = new InstanceRegistry();
 
     public CommandScanner() {
         this.reflections = new Reflections(
@@ -40,13 +39,21 @@ public class CommandScanner {
 
         for(Method annotatedMethod : commandMethods){
             try {
+                String commandName;
+                Command commandAnnotation = annotatedMethod.getAnnotation(Command.class);
                 CommandBinding commandBinding = new CommandBinding();
-                Object instance = annotatedMethod.getDeclaringClass().getDeclaredConstructor().newInstance();
+                Object instance = instanceRegistry.getOrCreate(annotatedMethod.getDeclaringClass());
+
+                if (commandAnnotation.name().isEmpty()){
+                    commandName = annotatedMethod.getName().toLowerCase();
+                } else {
+                    commandName = commandAnnotation.name();
+                }
 
                 commandBinding.setMethod(annotatedMethod);
                 commandBinding.setInstance(instance);
-                commands.put(annotatedMethod.getAnnotation(Command.class).name(), commandBinding);
-                System.out.println(annotatedMethod.getAnnotation(Command.class).name());
+                commands.put(commandName, commandBinding);
+                System.out.println(commandName);
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
@@ -57,9 +64,17 @@ public class CommandScanner {
             try {
                 Argument argumentAnnotation = annotatedField.getAnnotation(Argument.class);
                 String argumentName = argumentAnnotation.name();
-                String[] commandNames = argumentAnnotation.commands().split("\\s*,\\s*");
+                List<String> commandNames = new ArrayList<>(Arrays.stream(argumentAnnotation.commands().split("\\s*,\\s*")).toList());
+                if(argumentAnnotation.commands().isEmpty()){
+                    Method[] methods = annotatedField.getDeclaringClass().getDeclaredMethods();
+                    for(Method method : methods){
+                        if(method.getAnnotation(Command.class) != null){
+                            commandNames.add(method.getName());
+                        }
+                    }
+                }
 
-                Object instance = annotatedField.getDeclaringClass().getDeclaredConstructor().newInstance();
+                Object instance = instanceRegistry.getOrCreate(annotatedField.getDeclaringClass());
 
                 ArgumentBinding argumentBinding = new ArgumentBinding();
                 argumentBinding.setInstance(instance);
